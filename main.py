@@ -5,7 +5,8 @@ import inspect
 import google.generativeai as genai
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 
 from src.config import settings
 from src.pipeline import answer
@@ -22,6 +23,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.mount("/static", StaticFiles(directory="."), name="static")
+
+
+@app.get("/")
+async def root():
+    return FileResponse("index.html")
 
 
 def _stream_sync(generator):
