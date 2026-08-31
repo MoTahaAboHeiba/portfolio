@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 
-import google.generativeai as genai
+from google import genai
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
@@ -12,7 +12,7 @@ from src.config import settings
 from src.pipeline import answer
 
 
-genai.configure(api_key=settings.gemini_api_key)
+client = genai.Client(api_key=settings.gemini_api_key)
 
 app = FastAPI(title="MoTaha AI")
 app.add_middleware(
