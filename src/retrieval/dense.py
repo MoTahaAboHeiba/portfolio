@@ -10,7 +10,7 @@ then reused for the lifetime of the process.
 import logging
 from typing import Any
 
-from fastembed import TextEmbedding
+from google import genai
 from qdrant_client import QdrantClient
 
 from src.config import settings
@@ -18,27 +18,37 @@ from src.config import settings
 logger = logging.getLogger(__name__)
 
 COLLECTION_NAME = "motaha-ai"
-MODEL_NAME = "BAAI/bge-small-en-v1.5"
+MODEL_NAME = "gemini-embedding-001"
 
 _client: QdrantClient | None = None
-_embedding_model: TextEmbedding | None = None
+_gemini_client: genai.Client | None = None
 
 
-def _get_embedding_model() -> TextEmbedding:
-    global _embedding_model
-    if _embedding_model is None:
-        _embedding_model = TextEmbedding(model_name=MODEL_NAME)
-    return _embedding_model
+def _get_gemini_client() -> genai.Client:
+    global _gemini_client
+    if _gemini_client is None:
+        _gemini_client = genai.Client(api_key=settings.gemini_api_key)
+    return _gemini_client
 
 
 def embed_query(text: str) -> list[float]:
-    model = _get_embedding_model()
-    return list(model.embed([text]))[0]
+    client = _get_gemini_client()
+    result = client.models.embed_content(
+        model=MODEL_NAME,
+        contents=text,
+        config={"task_type": "RETRIEVAL_QUERY"},
+    )
+    return result.embeddings[0].values
 
 
 def embed_document(text: str) -> list[float]:
-    model = _get_embedding_model()
-    return list(model.embed([text]))[0]
+    client = _get_gemini_client()
+    result = client.models.embed_content(
+        model=MODEL_NAME,
+        contents=text,
+        config={"task_type": "RETRIEVAL_DOCUMENT"},
+    )
+    return result.embeddings[0].values
 
 
 def _get_client() -> QdrantClient:

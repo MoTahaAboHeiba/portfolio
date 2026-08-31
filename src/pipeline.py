@@ -13,9 +13,9 @@ Genuine career questions go through:
   4. Sources block (appended in Python, not by the LLM)
 """
 
-# REINDEX REQUIRED: fastembed model "BAAI/bge-small-en-v1.5" used 384 dimensions.
-# text-embedding-004 outputs 768 dimensions.
-# Re-run the indexing script against Qdrant before deploying.
+# Reindex required if the Qdrant collection was built with a different embedding
+# dimension than the active Gemini embedding model. gemini-embedding-001 emits
+# 3072-d vectors, so the collection must be recreated or rebuilt to match.
 
 from __future__ import annotations
 

@@ -13,16 +13,8 @@ tokens directly to the Gradio ChatInterface without buffering.
 import logging
 from typing import Generator, Any
 
-import warnings
-
 import groq
-
-# google.generativeai emits a FutureWarning about migrating to google-genai.
-# The package still works correctly; suppress the warning to keep logs clean.
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore", FutureWarning)
-    import google.generativeai as genai
-
+from google import genai
 
 from src.config import settings
 from src.generation.prompt import SYSTEM_PROMPT
@@ -118,17 +110,22 @@ def generate(
 
     # ── Fallback: Gemini non-streaming ───────────────────────────────────────
     logger.info("Gemini fallback used — query length %d", len(query))
-    genai.configure(api_key=settings.GEMINI_API_KEY)
-    model = genai.GenerativeModel(GEMINI_MODEL)
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
     if history_text:
         full_prompt = f"{system_content}\n\n[Previous conversation]\n{history_text}\n\nUser: {query}"
     else:
         full_prompt = f"{system_content}\n\nUser: {query}"
     try:
-        response = model.generate_content(full_prompt)
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=full_prompt,
+        )
         yield response.text
     except AttributeError:
-        response = model.generate_content(full_prompt)
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=full_prompt,
+        )
         logger.warning("Gemini response.text unavailable; falling back to content.parts[0].text")
         yield response.candidates[0].content.parts[0].text
     except Exception as exc:
