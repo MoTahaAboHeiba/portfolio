@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoTaha AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Sora:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --elevated: #1c2129;
+      --border: #30363d;
+      --border-2: #3d444d;
+      --text: #e6edf3;
+      --secondary: #9198a1;
+      --muted: #6e7681;
+      --accent: #58a6ff;
+      --accent-hover: #79b8ff;
+      --accent-lo: rgba(88, 166, 255, 0.08);
+      --accent-md: rgba(88, 166, 255, 0.14);
+      --green: #3fb950;
+      --green-lo: rgba(63, 185, 80, 0.12);
+      --amber: #d29922;
+      --amber-lo: rgba(210, 153, 34, 0.12);
+      --radius-sm: 6px;
+      --radius-lg: 12px;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Sora', -apple-system, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      background:
+        radial-gradient(circle at 25% 0%, rgba(88,166,255,0.05), transparent 35%),
+        var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    #app {
+      width: min(1100px, 100%);
+      height: min(92vh, 780px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      background: var(--elevated);
+      box-shadow: 0 18px 42px rgba(0,0,0,0.35);
+      display: flex;
+      flex-direction: column;
+    }
+
+    #portfolio-header {
+      background: var(--elevated);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark {
+      color: var(--text);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .brand-divider { color: var(--muted); font-size: 12px; }
+    .brand-subtitle { color: var(--muted); font-size: 12px; }
+
+    .status-pill { display: flex; align-items: center; gap: 8px; }
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px var(--accent-lo);
+    }
+    .status-text {
+      color: var(--secondary);
+      font-size: 11px;
+      font-family: var(--mono);
+    }
+
+    #chat-log {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 20px 16px;
+      background: var(--bg);
+      scroll-behavior: smooth;
+    }
+
+    .portfolio-message-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      width: 100%;
+      margin: 10px 0;
+    }
+    .portfolio-message-row.user { justify-content: flex-end; }
+
+    .portfolio-message { display: flex; flex-direction: column; width: 100%; }
+    .portfolio-message.user { align-items: flex-end; }
+    .portfolio-message.bot  { align-items: flex-start; }
+
+    .portfolio-avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 2px;
+      font-family: var(--mono);
+    }
+
+    .portfolio-bubble {
+      display: inline-block;
+      max-width: 85%;
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--text);
+      font-family: var(--sans);
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+    .portfolio-bubble.bot {
+      background: var(--bg);
+      border: 1px solid var(--accent-lo);
+      border-left: 2px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+    .portfolio-bubble.user {
+      background: var(--surface);
+      border: 1px solid var(--accent-md);
+      border-right: 2px solid var(--accent);
+      border-radius: var(--radius-sm);
+      max-width: 70%;
+    }
+
+    /* markdown rendering inside bot bubbles */
+    .bot-bubble p           { margin: 0 0 8px 0; }
+    .bot-bubble p:last-child { margin-bottom: 0; }
+    .bot-bubble ul,
+    .bot-bubble ol          { margin: 4px 0 8px 0; padding-left: 20px; }
+    .bot-bubble li          { margin-bottom: 4px; }
+    .bot-bubble strong      { color: var(--text); font-weight: 700; }
+    .bot-bubble code {
+      background: var(--accent-lo);
+      color: var(--accent);
+      padding: 1px 5px;
+      border-radius: var(--radius-sm);
+      font-size: 0.88em;
+      font-family: var(--mono);
+    }
+    .bot-bubble a           { color: var(--accent); text-decoration: none; }
+
+    /* source chips — clean, minimal */
+    .source-chips {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 5px;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--border);
+    }
+    .source-label {
+      font-size: 0.63rem;
+      font-family: var(--mono);
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding-right: 3px;
+      flex-shrink: 0;
+    }
+    .source-chip {
+      font-size: 0.68rem;
+      font-family: var(--mono);
+      color: var(--muted);
+      background: transparent;
+      border: 1px solid rgba(100, 116, 139, 0.2);
+      border-radius: var(--radius-sm);
+      padding: 1px 7px;
+      white-space: nowrap;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .source-chip-link {
+      color: var(--accent);
+      background: var(--accent-lo);
+      border-color: var(--accent-md);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .source-chip-link:hover {
+      background: var(--accent-md);
+      border-color: var(--accent);
+    }
+    .chip-icon { font-size: 0.58rem; opacity: 0.7; }
+
+    /* RTL support */
+    [dir="rtl"] {
+      font-family: 'Cairo', var(--sans);
+      line-height: 1.9;
+    }
+    [dir="rtl"] ul,
+    [dir="rtl"] ol { padding-left: 0; padding-right: 20px; }
+    [dir="rtl"] .source-chips { flex-direction: row-reverse; }
+
+    /* composer */
+    #composer {
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      padding: 10px 20px 12px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    #chat-input {
+      flex: 1;
+      min-height: 42px;
+      max-height: 120px;
+      resize: vertical;
+      border: 1px solid var(--border-2);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 11px 14px;
+      font-size: 14px;
+      outline: none;
+      font-family: var(--sans);
+    }
+    #chat-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+    #send-button {
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: var(--bg);
+      border-radius: var(--radius-sm);
+      padding: 10px 18px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    }
+    #send-button:hover:not(:disabled) {
+      border-color: var(--accent);
+      background: var(--accent-hover);
+    }
+    #send-button:disabled,
+    #chat-input:disabled { opacity: 0.6; cursor: wait; }
+
+    .example-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 10px 20px 12px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      align-content: flex-start;
+    }
+    .example-pill {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--secondary);
+      font-size: 11px;
+      padding: 7px 12px;
+      min-height: 32px;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s, background 0.15s;
+      white-space: normal;
+      text-align: left;
+      line-height: 1.35;
+    }
+    .example-pill:hover {
+      border-color: var(--accent);
+      color: var(--text);
+      background: var(--accent-lo);
+    }
+
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: var(--radius-sm); }
+    /* Shared interaction and geometry refinement */
+    :root {
+      --page-max: 1200px;
+      --page-pad: 32px;
+    }
+    body { padding: var(--page-pad); }
+    #app { width: min(var(--page-max), 100%); border-color: var(--border); border-radius: var(--radius-lg); }
+    #portfolio-header { min-height: 64px; padding: 12px var(--page-pad); }
+    #chat-log { padding-left: var(--page-pad); padding-right: var(--page-pad); }
+    #composer { padding-left: var(--page-pad); padding-right: var(--page-pad); border-top-color: var(--border); }
+    #chat-input { border-color: var(--border-2); }
+    #chat-input:hover { border-color: var(--accent); }
+    #send-button { border-color: var(--accent); }
+    #send-button:hover:not(:disabled) {
+      background: var(--accent-hover);
+    }
+    .example-row { padding-left: var(--page-pad); padding-right: var(--page-pad); }
+    .source-chip-link:hover { background: var(--accent-lo); border-color: var(--accent); }
+    #portfolio-header,
+    #composer { background: var(--elevated); }
+    .brand-mark { color: var(--text); }
+    .brand-divider { color: var(--border-2); }
+    .status-dot { background: var(--accent); }
+    #chat-log { min-height: 0; }
+    @media (max-width: 600px) {
+      body { padding: 20px; }
+      #portfolio-header,
+      #chat-log,
+      #composer,
+      .example-row { padding-left: 20px; padding-right: 20px; }
+      .brand-subtitle { display: none; }
+      .example-row { gap: 6px; }
+      .example-pill { padding: 6px 10px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="portfolio-header">
+      <div class="brand">
+        <span class="brand-mark">// MOTAHA AI</span>
+        <span class="brand-divider">|</span>
+        <span class="brand-subtitle">Ask me anything about my engineering work</span>
+      </div>
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        <span class="status-text">taha@portfolio ~</span>
+      </div>
+    </div>
+
+    <div class="example-row">
+      <button class="example-pill">Who are you?</button>
+      <button class="example-pill">What certifications do you hold?</button>
+      <button class="example-pill">Tell me about your projects</button>
+      <button class="example-pill">Explain your experience in Data Engineering</button>
+    </div>
+
+    <div id="chat-log"></div>
+
+    <div id="composer">
+      <textarea id="chat-input" rows="1" placeholder="Ask me about my projects, decisions, or background..."></textarea>
+      <button id="send-button">Send</button>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "";
+    // Change to your Render URL before deploying, e.g. "https://motaha-ai.onrender.com"
+
+    // Map knowledge_base slugs to GitHub URLs.
+    // Fill in any empty strings with the actual repo URL.
+    const SOURCE_URLS = {
+      "ecommerce-lakehouse":      "https://github.com/MoTahaAboHeiba/E-Commerce-Lakehouse-Using-Databricks",
+      "retail-lakehouse-main":    "https://github.com/MoTahaAboHeiba/retail-lakehouse-pipeline",
+      "retail-lakehouse-airflow": "https://github.com/MoTahaAboHeiba/retail-lakehouse-pipeline",
+      "retail-lakehouse-dbt":     "https://github.com/MoTahaAboHeiba/retail-lakehouse-pipeline",
+      "retail-lakehouse-gold":    "https://github.com/MoTahaAboHeiba/retail-lakehouse-pipeline",
+      "retail-lakehouse-s3":      "https://github.com/MoTahaAboHeiba/retail-lakehouse-pipeline",
+      "sql-data-warehouse":       "https://github.com/MoTahaAboHeiba/SQL-Data-Warehouse-project", // fill in
+      "edumate-rag":              "https://github.com/MoTahaAboHeiba/EduMate-RAG", // fill in
+      "motaha-ai":                "https://github.com/MoTahaAboHeiba/motaha-ai", // fill in
+    };
+
+    const STARTUP_MESSAGE =
+      "Hey, I'm Mohamed Taha. Ask me anything about my Data engineering work: projects, technical decisions, architecture choices, or what I can bring to your team.\n\n تقدر تكلمني عربي لو حابب.";
+
+    const state = { history: [{ role: "assistant", content: STARTUP_MESSAGE }] };
+    let streaming   = false;
+    let streamBuffer = "";
+
+    // ── utilities ────────────────────────────────────────────────
+
+    function isArabic(text) {
+      return /[\u0600-\u06FF]/.test(text);
+    }
+
+    function escapeHtml(v) {
+      return String(v)
+        .replace(/&/g,  "&amp;")
+        .replace(/</g,  "&lt;")
+        .replace(/>/g,  "&gt;")
+        .replace(/"/g,  "&quot;")
+        .replace(/'/g,  "&#039;");
+    }
+
+    // ── markdown renderer ─────────────────────────────────────────
+    // Handles \\n-escaped newlines from the SSE pipeline.
+    // No external dependency.
+
+    function renderMarkdown(raw) {
+      // 1. unescape \n that the backend escaped for SSE safety
+      let text = raw.replace(/\\n/g, "\n");
+
+      // 2. escape HTML entities so user content cannot inject HTML
+      let html = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+      // 3. inline formatting
+      html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+      html = html.replace(/`([^`]+)`/g,     "<code>$1</code>");
+
+      // 4. block structure
+      const lines = html.split("\n");
+      let out    = "";
+      let inUl   = false;
+      let inOl   = false;
+      let para   = [];
+
+      const flushPara = () => {
+        if (para.length) {
+          const content = para.join(" ").trim();
+          if (content) out += `<p>${content}</p>`;
+          para = [];
+        }
+      };
+
+      for (const line of lines) {
+        const ul = line.match(/^[-*]\s+(.*)/);
+        const ol = line.match(/^\d+\.\s+(.*)/);
+
+        if (ul) {
+          flushPara();
+          if (inOl) { out += "</ol>"; inOl = false; }
+          if (!inUl) { out += "<ul>"; inUl = true; }
+          out += `<li>${ul[1]}</li>`;
+        } else if (ol) {
+          flushPara();
+          if (inUl) { out += "</ul>"; inUl = false; }
+          if (!inOl) { out += "<ol>"; inOl = true; }
+          out += `<li>${ol[1]}</li>`;
+        } else {
+          if (inUl) { out += "</ul>"; inUl = false; }
+          if (inOl) { out += "</ol>"; inOl = false; }
+          if (line.trim() === "") { flushPara(); }
+          else                    { para.push(line); }
+        }
+      }
+
+      flushPara();
+      if (inUl) out += "</ul>";
+      if (inOl) out += "</ol>";
+      return out;
+    }
+
+    // ── source chips ──────────────────────────────────────────────
+
+    function slugToLabel(filename) {
+      return String(filename)
+        .replace(/\.md$/i, "")
+        .replace(/-/g, " ")
+        .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    // Returns an HTML string. Used by both renderMessage (history)
+    // and renderSources (live streaming).
+    function getSourceDetails(source) {
+      if (typeof source === "string") {
+        return {
+          label: source,
+          githubUrl: SOURCE_URLS[source.replace(/\.md$/i, "")] || "",
+          portfolioUrl: "#projects",
+        };
+      }
+
+      if (!source || typeof source !== "object") {
+        return { label: "", githubUrl: "", portfolioUrl: "" };
+      }
+
+      const label = source.label || source.display_name || source.name || "Source";
+      const slug = String(source.name || "").replace(/\.md$/i, "");
+      return {
+        label: String(label),
+        githubUrl: source.github_url || source.url || SOURCE_URLS[slug] || "",
+        portfolioUrl: source.portfolio_url || "#projects",
+      };
+    }
+
+    function buildSourcesHtml(sources) {
+      if (!sources || sources.length === 0) return "";
+
+      const seen   = new Set();
+      const unique = sources.filter(src => {
+        const details = getSourceDetails(src);
+        const key = details.githubUrl || details.label;
+        if (!key) return false;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      if (unique.length === 0) return "";
+
+      const chips = unique.map(src => {
+        const details = getSourceDetails(src);
+        const label = typeof src === "string" && /\.md$/i.test(src)
+          ? slugToLabel(details.label)
+          : details.label;
+
+        if (details.githubUrl) {
+          return `<a href="${escapeHtml(details.githubUrl)}" target="_blank" rel="noopener noreferrer" class="source-chip source-chip-link">${escapeHtml(label)} <span class="chip-icon">↗</span></a>`;
+        }
+        return `<span class="source-chip">${escapeHtml(label)}</span>`;
+      }).join("");
+
+      return `<div class="source-chips"><span class="source-label">Sources</span>${chips}</div>`;
+    }
+
+    // Appends source chips to a live streaming bubble via DOM insertion.
+    function renderSources(bubble, sources) {
+      const html = buildSourcesHtml(sources);
+      if (html) bubble.insertAdjacentHTML("beforeend", html);
+    }
+
+    // ── message rendering ─────────────────────────────────────────
+
+    function renderMessage(role, content, sources = []) {
+      if (role === "user") {
+        const safe    = escapeHtml(content).replace(/\n/g, "<br>");
+        const rtlAttr = isArabic(content) ? ' dir="rtl" style="text-align:right;"' : "";
+        return `
+          <div class="portfolio-message-row user">
+            <div class="portfolio-message user">
+              <div class="portfolio-bubble user"${rtlAttr}>${safe}</div>
+            </div>
+          </div>`;
+      }
+
+      const rendered  = renderMarkdown(content);
+      const rtlAttr   = isArabic(content) ? ' dir="rtl" style="text-align:right;"' : "";
+      const chipsHtml = buildSourcesHtml(sources);
+
+      return `
+        <div class="portfolio-message-row bot">
+          <div class="portfolio-avatar">MT</div>
+          <div class="portfolio-message bot">
+            <div class="portfolio-bubble bot bot-bubble"${rtlAttr}>${rendered}${chipsHtml}</div>
+          </div>
+        </div>`;
+    }
+
+    function renderHistory() {
+      const log = document.getElementById("chat-log");
+      if (!log) return;
+      log.innerHTML = state.history
+        .map(item => renderMessage(item.role, item.content, item.sources || []))
+        .join("");
+      scrollToBottom();
+    }
+
+    function scrollToBottom() {
+      const log = document.getElementById("chat-log");
+      if (log) log.scrollTop = log.scrollHeight;
+    }
+
+    function setLoading(on) {
+      const input  = document.getElementById("chat-input");
+      const button = document.getElementById("send-button");
+      if (input)  input.disabled  = on;
+      if (button) button.disabled = on;
+    }
+
+    // ── SSE streaming ─────────────────────────────────────────────
+
+    async function streamChat(message, history) {
+      streamBuffer    = "";
+      let responseSources = [];
+      const bubble    = document.getElementById("streaming-bubble");
+
+      const response  = await fetch(`${API_BASE}/chat`, {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ message, history }),
+      });
+
+      const reader  = response.body.getReader();
+      const decoder = new TextDecoder();
+      let   sseBuffer = "";
+
+      // Process one complete SSE data line.
+      // Returns true when the stream signals [DONE].
+      function processDataLine(line) {
+        if (!line.startsWith("data:")) return false;
+
+        // FIX: SSE format is "data: content" (one mandatory space).
+        // Using slice(6) removes exactly "data: " and preserves any
+        // leading space that is part of the token — the token delimiter
+        // LLMs emit between words. trimStart() was stripping that space,
+        // causing "word1word2" concatenation in both Arabic and English.
+        const chunk = line.startsWith("data: ") ? line.slice(6) : line.slice(5);
+
+        if (chunk === "[DONE]") {
+          if (bubble) {
+            bubble.innerHTML = renderMarkdown(streamBuffer);
+            if (isArabic(streamBuffer)) {
+              bubble.setAttribute("dir", "rtl");
+              bubble.style.textAlign = "right";
+            }
+            renderSources(bubble, responseSources);
+          }
+          return true;
+        }
+
+        if (chunk.startsWith("[SOURCES]")) {
+          try {
+            const parsed = JSON.parse(chunk.slice(9));
+            responseSources = Array.isArray(parsed) ? parsed : [];
+          } catch (_) {
+            responseSources = [];
+          }
+          return false;
+        }
+
+        streamBuffer += chunk;
+
+        if (bubble) {
+          // Set RTL direction as soon as the first Arabic token arrives
+          // so text flows correctly from the start of streaming.
+          if (!bubble.getAttribute("dir") && isArabic(chunk)) {
+            bubble.setAttribute("dir", "rtl");
+            bubble.style.textAlign = "right";
+          }
+          bubble.innerHTML = renderMarkdown(streamBuffer);
+          bubble.scrollIntoView({ behavior: "smooth", block: "end" });
+        }
+
+        return false;
+      }
+
+      // Drain all complete SSE events from the buffer.
+      // Returns true if [DONE] was encountered.
+      function drainBuffer() {
+        let boundary;
+        while ((boundary = sseBuffer.indexOf("\n\n")) !== -1) {
+          const event  = sseBuffer.slice(0, boundary);
+          sseBuffer    = sseBuffer.slice(boundary + 2);
+          const lines  = event.split(/\r?\n/);
+          for (const line of lines) {
+            if (processDataLine(line)) return true;
+          }
+        }
+        return false;
+      }
+
+      // Main read loop
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        sseBuffer += decoder.decode(value, { stream: true });
+        if (drainBuffer()) return { streamBuffer, responseSources };
+      }
+
+      // Handle any remaining bytes after the stream closes
+      if (sseBuffer.trim()) {
+        for (const line of sseBuffer.split(/\r?\n/)) {
+          if (processDataLine(line)) return { streamBuffer, responseSources };
+        }
+      }
+
+      // Ensure bubble is fully rendered even if [DONE] was never sent
+      if (bubble) {
+        bubble.innerHTML = renderMarkdown(streamBuffer);
+        if (isArabic(streamBuffer)) {
+          bubble.setAttribute("dir", "rtl");
+          bubble.style.textAlign = "right";
+        }
+        renderSources(bubble, responseSources);
+      }
+
+      return { streamBuffer, responseSources };
+    }
+
+    // ── submit ────────────────────────────────────────────────────
+
+    async function submitPrompt() {
+      const input = document.getElementById("chat-input");
+      if (!input || streaming) return;
+      const message = input.value.trim();
+      if (!message) return;
+
+      streaming = true;
+      setLoading(true);
+      input.value = "";
+
+      state.history.push({ role: "user", content: message });
+      renderHistory();
+
+      const log    = document.getElementById("chat-log");
+      const botRow = document.createElement("div");
+      botRow.className = "portfolio-message-row bot";
+      botRow.innerHTML = `
+        <div class="portfolio-avatar">MT</div>
+        <div class="portfolio-message bot">
+          <div id="streaming-bubble" class="portfolio-bubble bot bot-bubble"></div>
+        </div>`;
+      log.appendChild(botRow);
+      scrollToBottom();
+
+      try {
+        const result = await streamChat(message, state.history.slice());
+        const bubble = document.getElementById("streaming-bubble");
+        if (bubble) bubble.id = "";
+        state.history.push({
+          role:    "assistant",
+          content: (result?.streamBuffer || streamBuffer).trim() || "",
+          sources: result?.responseSources || [],
+        });
+        renderHistory();
+      } catch (_) {
+        const bubble = document.getElementById("streaming-bubble");
+        if (bubble) { bubble.id = ""; bubble.textContent = "Something went wrong. Try again in a moment."; }
+        state.history.push({ role: "assistant", content: "Something went wrong. Try again in a moment." });
+        renderHistory();
+      } finally {
+        setLoading(false);
+        streaming = false;
+      }
+    }
+
+    // ── boot ──────────────────────────────────────────────────────
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const input  = document.getElementById("chat-input");
+      const button = document.getElementById("send-button");
+
+      renderHistory();
+
+      button.addEventListener("click", submitPrompt);
+      input.addEventListener("keydown", e => {
+        if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submitPrompt(); }
+      });
+
+      document.querySelectorAll(".example-pill").forEach(pill => {
+        pill.addEventListener("click", () => {
+          if (streaming) return;
+          input.value = pill.textContent.trim();
+          submitPrompt();
+        });
+      });
+    });
+  </script>
+</body>
+</html>
