@@ -19,6 +19,7 @@ Genuine career questions go through:
 
 from __future__ import annotations
 
+import json
 import logging
 from typing import Generator
 
@@ -31,6 +32,21 @@ from src.session import ConversationTurn, SessionService
 
 logger = logging.getLogger(__name__)
 
+SYSTEM_PROMPT = """You are MoTaha AI, a helpful assistant for the portfolio website.
+
+Formatting rules:
+- Use **bold** for names, technologies, tools, and key terms.
+- Use bullet points for lists of skills, technologies, or features.
+- Use numbered lists only for sequential steps or ordered items.
+- Use short paragraphs. One idea per paragraph. Never write a wall of text.
+- Put each paragraph on its own line with a blank line between paragraphs.
+- Put each bullet list item on its own line, starting with "- " at the beginning of the line.
+- Put a blank line before and after any bullet list.
+- Never place list markers inline after a sentence on the same line.
+- Never write "sentence: - item" or "sentence- **item**"; start a new line before a bullet list item.
+- Never use headers (##, ###) in responses. Paragraphs and bullets only.
+- Never use em dashes. Use a comma or a new sentence instead.
+"""
 
 def _build_sources_block(
     results: list[dict],
@@ -116,6 +132,21 @@ def answer(
         return
 
     # ── Step 5: sources (only on real answers) ────────────────────────────────
+    seen: set[str] = set()
+    sources: list[dict[str, str]] = []
+    for chunk in results:
+        source = chunk.get("source")
+        if not source or source in seen:
+            continue
+        seen.add(source)
+        entry = lookup(source)
+        sources.append({
+            "label": entry.get("display_name") or source,
+            "github_url": entry.get("url", ""),
+            "portfolio_url": "#projects",
+        })
+
     sources_block = _build_sources_block(results, score_threshold=0.005)
     if sources_block:
         yield "\n\n" + sources_block
+    yield f"[SOURCES]{json.dumps(sources)}"

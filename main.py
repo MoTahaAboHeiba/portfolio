@@ -33,13 +33,15 @@ async def root():
 
 def _stream_sync(generator):
     for chunk in generator:
-        yield f"data: {chunk}\n\n"
+        safe_chunk = chunk.replace("\n", "\\n").replace("\r", "")
+        yield f"data: {safe_chunk}\n\n"
     yield "data: [DONE]\n\n"
 
 
 async def _stream_async(generator):
     async for chunk in generator:
-        yield f"data: {chunk}\n\n"
+        safe_chunk = chunk.replace("\n", "\\n").replace("\r", "")
+        yield f"data: {safe_chunk}\n\n"
     yield "data: [DONE]\n\n"
 
 
