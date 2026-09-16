@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import logging
 
 from google import genai
 from fastapi import FastAPI, HTTPException, Request
@@ -11,6 +12,12 @@ from fastapi.staticfiles import StaticFiles
 from src.config import settings
 from src.pipeline import answer
 
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
+logging.getLogger("src").setLevel(logging.INFO)
 
 client = genai.Client(api_key=settings.gemini_api_key)
 
@@ -82,4 +89,4 @@ def health() -> dict[str, str]:
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
